@@ -65,6 +65,12 @@
                 <h3 class="font-semibold text-gray-600">Actors</h3>
                 <p>{{ movie.Actors }}</p>
               </div>
+              <router-link
+                :to="`/watch/${movie.imdbID}`"
+                class="mt-4 bg-blue-600 text-white px-6 py-3 rounded w-full text-center hover:bg-blue-700"
+              >
+                Watch Now
+              </router-link>
             </div>
           </div>
         </div>
