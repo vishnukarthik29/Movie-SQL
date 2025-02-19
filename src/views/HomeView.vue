@@ -75,7 +75,7 @@ export default {
       this.loading = true;
       try {
         const response = await axios.get(
-          `http://localhost:3000/api/search?title=${this.searchQuery}`
+          `/backend//api/search?title=${this.searchQuery}`
         );
         this.searchResults = response.data.Search || [];
       } catch (error) {

@@ -111,9 +111,7 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await axios.get(
-          `http://localhost:3000/api/movie/${this.id}`
-        );
+        const response = await axios.get(`/backend/api/movie/${this.id}`);
         this.movie = response.data;
       } catch (error) {
         console.error("Error fetching movie details:", error);
@@ -127,7 +125,7 @@ export default {
 
       this.isSaving = true;
       try {
-        await axios.post("http://localhost:3000/api/favorites", {
+        await axios.post("/backend/api/favorites", {
           imdb_id: this.movie.imdbID,
           title: this.movie.Title,
           year: this.movie.Year,

@@ -56,15 +56,16 @@
         >
           <!-- Movie Poster -->
           <div class="relative">
+            <!-- <div
+              class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity duration-300 ease-in-out"
+            ></div> -->
             <img
+              v-if="movie.poster && movie.poster !== 'N/A'"
               :src="movie.poster"
               :alt="movie.title"
-              class="w-full h-96 object-cover"
+              class="w-full h-96 object-fit"
               @error="handleImageError"
             />
-            <div
-              class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity duration-300"
-            ></div>
           </div>
 
           <!-- Movie Info -->
@@ -101,7 +102,7 @@
     <!-- Confirmation Modal -->
     <div
       v-if="movieToRemove"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      class="fixed inset-0 backdrop-blur-xs bg-opacity-50 flex items-center justify-center p-4 z-50"
     >
       <div class="bg-white rounded-lg p-6 max-w-md w-full">
         <h2 class="text-xl font-bold mb-4">Remove from Favorites?</h2>
@@ -177,7 +178,8 @@ export default {
     async loadFavorites() {
       this.loading = true;
       try {
-        const response = await axios.get("http://localhost:3000/api/favorites");
+        const response = await axios.get("/backend/api/favorites");
+        console.log("Favorites data:", response.data); // Debugging
         this.favorites = response.data;
       } catch (error) {
         console.error("Error loading favorites:", error);
@@ -195,7 +197,7 @@ export default {
 
       try {
         await axios.delete(
-          `http://localhost:3000/api/favorites/${this.movieToRemove.imdb_id}`
+          `/backend/api/favorites/${this.movieToRemove.imdb_id}`
         );
         this.favorites = this.favorites.filter(
           (m) => m.imdb_id !== this.movieToRemove.imdb_id
