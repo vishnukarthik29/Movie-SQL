@@ -52,7 +52,7 @@
         <div
           v-for="movie in sortedFavorites"
           :key="movie.imdb_id"
-          class="bg-white rounded-lg shadow-md overflow-hidden group relative"
+          class="bg-white rounded-lg shadow-md overflow-hidden group"
         >
           <!-- Movie Poster -->
           <div class="relative">
@@ -70,8 +70,8 @@
 
           <!-- Movie Info -->
           <div class="p-4">
-            <h3 class="text-md font-semibold mb-2">{{ movie.title }}</h3>
-            <div class="flex justify-between items-center mb-10">
+            <h3 class="text-lg font-semibold mb-2">{{ movie.title }}</h3>
+            <div class="flex justify-between items-center mb-3">
               <span class="text-gray-600">{{ movie.year }}</span>
               <span class="flex items-center text-yellow-500">
                 <span class="mr-1">★</span>
@@ -80,22 +80,19 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="absolute bottom-0 left-0 right-0 p-[6px]">
-              <div class="flex justify-between items-center">
-                <router-link
-                  :to="{ name: 'MovieView', params: { id: movie.imdb_id } }"
-                  class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Details
-                </router-link>
-
-                <button
-                  @click="confirmRemove(movie)"
-                  class="text-red-600 px-4 py-2 rounded border border-red-600 hover:bg-red-50"
-                >
-                  Remove
-                </button>
-              </div>
+            <div class="space-y-2">
+              <router-link
+                :to="{ name: 'movie-details', params: { id: movie.imdb_id } }"
+                class="block text-center bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                View Details
+              </router-link>
+              <button
+                @click="confirmRemove(movie)"
+                class="w-full text-red-600 px-4 py-2 rounded border border-red-600 hover:bg-red-50"
+              >
+                Remove
+              </button>
             </div>
           </div>
         </div>

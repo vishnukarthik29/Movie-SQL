@@ -1,37 +1,36 @@
 <template>
-  <div class="container mx-auto p-4 flex flex-col md:flex-row gap-8">
+  <div class="container flex flex-col md:flex-row gap-8">
     <div v-if="loading" class="text-center py-8">
       <p class="text-gray-600">Loading movie details...</p>
     </div>
 
     <div v-else-if="movie" class="flex flex-col md:flex-row gap-8">
       <!-- Movie Details -->
-      <div class="md:w-1/3 bg-white rounded-lg shadow-lg p-6">
+      <div class="md:w-2/5 bg-white rounded-lg shadow-lg p-6">
         <img
-          :src="movie.Poster"
-          :alt="movie.Title"
-          class="w-full rounded-lg shadow-md"
+          :src="movie.poster"
+          :alt="movie.title"
+          class="w-full object-cover rounded-lg shadow-md"
         />
-        <h1 class="text-3xl font-bold mt-4">{{ movie.Title }}</h1>
-        <p class="text-gray-600 mt-2">{{ movie.Plot }}</p>
+        <h1 class="text-3xl font-bold mt-4">{{ movie.title }}</h1>
+        <p class="text-gray-600 mt-2">{{ movie.plot }}</p>
         <div class="mt-4 space-y-2">
-          <p><strong>Year:</strong> {{ movie.Year }}</p>
-          <p><strong>Director:</strong> {{ movie.Director }}</p>
-          <p><strong>Genre:</strong> {{ movie.Genre }}</p>
-          <p><strong>Actors:</strong> {{ movie.Actors }}</p>
-          <p><strong>Rating:</strong> {{ movie.imdbRating }}/10</p>
+          <p><strong>Year:</strong> {{ movie.year }}</p>
+          <p><strong>Director:</strong> {{ movie.director }}</p>
+          <p><strong>Genre:</strong> {{ movie.genre }}</p>
+          <p><strong>Rating:</strong> {{ movie.rating }}/10</p>
         </div>
       </div>
 
       <!-- Video Embed -->
-      <div class="md:w-2/3">
+      <div class="md:w-3/5">
         <h2 class="text-2xl font-semibold mb-4">Watch Now</h2>
-        <iframe
+        <!-- <iframe
           v-if="videoUrl"
           :src="videoUrl"
-          class="w-full h-[400px] md:h-[500px] rounded-lg shadow-lg"
+          class="w-full h-[720px] md:h-[500px] rounded-lg shadow-lg"
           allowfullscreen
-        ></iframe>
+        ></iframe> -->
       </div>
     </div>
 
@@ -70,11 +69,11 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await fetch(`/backend/api/movie/${this.id}`);
+        const response = await fetch(`/backend/api/moviefromdb/${this.id}`);
         if (!response.ok) throw new Error("Failed to fetch movie details");
 
         this.movie = await response.json();
-        this.videoUrl = `https://vidsrc.xyz/embed/movie?imdb=${this.movie.imdbID}`;
+        this.videoUrl = `https://vidsrc.xyz/embed/movie?imdb=${this.movie.imdb_id}`;
       } catch (error) {
         console.error("Error fetching movie details:", error);
         this.movie = null;

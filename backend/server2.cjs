@@ -27,11 +27,14 @@ db.connect(async (err) => {
 
   // Create tables separately
   const createMoviesTable = `
-    CREATE TABLE IF NOT EXISTS movies (
+    CREATE TABLE IF NOT EXISTS favorite_movies (
       id INT AUTO_INCREMENT PRIMARY KEY,
       imdb_id VARCHAR(20) UNIQUE,
       title VARCHAR(255),
       year VARCHAR(10),
+      runtime VARCHAR(255),
+      genre VARCHAR(255),
+      director VARCHAR(255),
       poster VARCHAR(255),
       plot TEXT,
       rating DECIMAL(3,1),
@@ -47,7 +50,6 @@ db.connect(async (err) => {
       release_date DATE,
       poster VARCHAR(255),
       plot TEXT,
-      rating DECIMAL(3,1),
       last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
@@ -55,7 +57,7 @@ db.connect(async (err) => {
   // Execute queries sequentially
   try {
     await db.promise().query(createMoviesTable);
-    console.log("Movies table ready");
+    console.log("Favorite Movies table ready");
 
     await db.promise().query(createLatestReleasesTable);
     console.log("Latest releases table ready");
@@ -164,7 +166,7 @@ async function fetchLatestReleases() {
     }
 
     // Process both current year and last year
-    const yearsToSearch = [currentYear, currentYear - 1];
+    const yearsToSearch = [currentYear - 1];
 
     for (const year of yearsToSearch) {
       let currentPage = 1;
@@ -191,14 +193,13 @@ async function fetchLatestReleases() {
                       await db
                         .promise()
                         .query(
-                          "INSERT INTO latest_releases (imdb_id, title, release_date, poster, plot, rating) VALUES (?, ?, ?, ?, ?, ?)",
+                          "INSERT INTO latest_releases (imdb_id, title, release_date, poster, plot) VALUES (?, ?, ?, ?, ?)",
                           [
                             movie.imdbID,
                             details.Title,
                             releaseDate,
                             details.Poster,
                             details.Plot,
-                            details.imdbRating,
                           ]
                         );
                       processedMovies.add(movie.imdbID);
@@ -274,6 +275,7 @@ app.get("/api/search", async (req, res) => {
     const response = await axios.get(
       `https://www.omdbapi.com/?s=${title}&apikey=bf4ec251`
     );
+    console.log(response.data);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch movies" });
@@ -286,6 +288,7 @@ app.get("/api/movie/:id", async (req, res) => {
     const response = await axios.get(
       `https://www.omdbapi.com/?i=${id}&apikey=bf4ec251`
     );
+    console.log(response.data);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch movie details" });
@@ -308,13 +311,24 @@ app.get("/api/latest-releases", (req, res) => {
 
 // Save movie to database
 app.post("/api/favorites", (req, res) => {
-  const { imdb_id, title, year, poster, plot, rating } = req.body;
+  const {
+    imdb_id,
+    title,
+    year,
+    runtime,
+    genre,
+    director,
+    poster,
+    plot,
+    rating,
+  } = req.body;
+  console.log(req.body);
 
   const query = `
-    INSERT INTO movies (imdb_id, title, year, poster, plot, rating)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO favorite_movies (imdb_id, title, year, runtime, genre, director, poster, plot, rating)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
-    title=?, year=?, poster=?, plot=?, rating=?
+    title=?, year=?, poster=?, plot=?, rating=?, genre=?, director=?, runtime=?
   `;
 
   db.query(
@@ -323,18 +337,26 @@ app.post("/api/favorites", (req, res) => {
       imdb_id,
       title,
       year,
+      runtime,
+      genre,
+      director,
       poster,
       plot,
       rating,
+      //dupllicate key update
       title,
       year,
+      runtime,
       poster,
       plot,
       rating,
+      genre,
+      director,
     ],
     (err, result) => {
       if (err) {
         res.status(500).json({ error: "Failed to save movie" });
+        console.log(err);
         return;
       }
       res.json({ message: "Movie saved successfully", id: result.insertId });
@@ -344,26 +366,61 @@ app.post("/api/favorites", (req, res) => {
 
 // Get favorite movies
 app.get("/api/favorites", (req, res) => {
-  db.query("SELECT * FROM movies ORDER BY created_at DESC", (err, results) => {
-    if (err) {
-      res.status(500).json({ error: "Failed to fetch favorites" });
-      return;
+  db.query(
+    "SELECT * FROM favorite_movies ORDER BY created_at DESC",
+    (err, results) => {
+      if (err) {
+        res.status(500).json({ error: "Failed to fetch favorites" });
+        return;
+      }
+      res.json(results);
     }
-    res.json(results);
-  });
+  );
 });
 
 // Delete movie from favorites
 app.delete("/api/favorites/:imdbId", (req, res) => {
   const { imdbId } = req.params;
 
-  db.query("DELETE FROM movies WHERE imdb_id = ?", [imdbId], (err, result) => {
-    if (err) {
-      res.status(500).json({ error: "Failed to remove movie from favorites" });
-      return;
+  db.query(
+    "DELETE FROM favorite_movies WHERE imdb_id = ?",
+    [imdbId],
+    (err, result) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ error: "Failed to remove movie from favorites" });
+        return;
+      }
+      res.json({ message: "Movie removed from favorites successfully" });
     }
-    res.json({ message: "Movie removed from favorites successfully" });
-  });
+  );
+});
+
+app.get("/api/moviefromdb/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    db.query(
+      `SELECT * FROM favorite_movies WHERE imdb_id = ?`,
+      [id], // Use parameterized query to prevent SQL injection
+      (err, results) => {
+        if (err) {
+          res.status(500).json({ error: "Failed to fetch movie details" });
+          console.log(err);
+          return;
+        }
+        if (results.length === 0) {
+          res.status(404).json({ error: "Movie not found" });
+          return;
+        }
+        res.json(results[0]); // Return the first result (assuming imdb_id is unique)
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch movie details" });
+    console.log(error);
+  }
 });
 
 const PORT = process.env.PORT || 3000;

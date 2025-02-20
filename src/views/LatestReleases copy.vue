@@ -6,29 +6,30 @@
 
     <!-- Movie Grid -->
     <div
-      class="grid grid-cols-1 gap-6 md:grid-cols-2 sm:grid-cols-2 lg:grid-cols4 xl:grid-cols-4"
+      class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       <div
         v-for="movie in latestReleases"
         :key="movie.imdb_id"
-        class="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow duration-300 relative"
+        class="group bg-white rounded-lg shadow-lg overflow-hidden relative h-[22rem] flex flex-col"
       >
-        <div class="relative">
+        <div class="relative h-48">
           <img
             :src="movie.poster"
             :alt="movie.title"
-            class="w-full h-96 object-cover"
+            class="w-full h-96 object-fit"
           />
         </div>
 
         <div class="p-4 flex-grow flex flex-col">
-          <h3 class="text-md font-semibold text-gray-900 mb-2">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
             {{ movie.title }}
           </h3>
 
-          <span class="text-sm text-gray-600">
-            Released: {{ new Date(movie.release_date).toLocaleDateString() }}
-          </span>
+          <span class="text-sm text-gray-600"
+            >Released:
+            {{ new Date(movie.release_date).toLocaleDateString() }}</span
+          >
 
           <div class="flex items-center justify-between mt-auto">
             <button
@@ -54,17 +55,13 @@
           </div>
         </div>
 
-        <!-- View Details Link -->
-        <div
-          class="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center pb-[6px]"
+        <!-- View Details Button (Visible on Hover) -->
+        <button
+          @click="goToMovieDetails(movie.imdb_id)"
+          class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-lg w-3/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         >
-          <router-link
-            :to="{ name: 'movie-details', params: { id: movie.imdb_id } }"
-            class="bottom-0 pb-3block text-center bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
-          >
-            View Details
-          </router-link>
-        </div>
+          View Details
+        </button>
       </div>
     </div>
   </div>
@@ -125,6 +122,9 @@ export default {
       } catch (error) {
         console.error("Error toggling favorite:", error);
       }
+    },
+    goToMovieDetails(movieId) {
+      this.$router.push({ name: "movie-details", params: { id: movieId } });
     },
   },
 };

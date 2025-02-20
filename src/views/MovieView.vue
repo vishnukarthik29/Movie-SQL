@@ -11,63 +11,61 @@
     >
       <div class="p-6">
         <div class="flex justify-between items-start mb-6">
-          <h1 class="text-3xl font-bold">{{ movie.Title }}</h1>
-          <router-link to="/" class="text-gray-500 hover:text-gray-700">
-            ← Back to Search
+          <h1 class="text-3xl font-bold">{{ movie.title }}</h1>
+          <router-link
+            to="/favorites"
+            class="text-gray-500 hover:text-gray-700"
+          >
+            ← Back To Favorite
           </router-link>
         </div>
 
         <div class="flex flex-col md:flex-row gap-8">
           <div class="md:w-1/3">
             <img
-              :src="movie.Poster"
+              :src="movie.poster"
               :alt="movie.Title"
               class="w-full rounded-lg shadow-md"
               @error="handleImageError"
             />
-            <button
-              @click="saveToFavorites"
-              class="mt-4 bg-green-600 text-white px-6 py-3 rounded w-full hover:bg-green-700 disabled:bg-gray-400"
-              :disabled="isSaving"
-            >
-              {{ isSaving ? "Saving..." : "Save to Favorites" }}
-            </button>
           </div>
 
           <div class="md:w-2/3">
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
               <h2 class="text-xl font-semibold mb-2">Plot</h2>
-              <p class="text-gray-700">{{ movie.Plot }}</p>
+              <p class="text-gray-700">{{ movie.plot }}</p>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Year</h3>
-                <p>{{ movie.Year }}</p>
+                <p>{{ movie.year }}</p>
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Rating</h3>
-                <p>{{ movie.imdbRating }}/10</p>
+                <p>{{ movie.rating }}/10</p>
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Runtime</h3>
-                <p>{{ movie.Runtime }}</p>
+                <p>{{ movie.runtime }}</p>
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Director</h3>
-                <p>{{ movie.Director }}</p>
+                <p>{{ movie.director }}</p>
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Genre</h3>
                 <p>{{ movie.Genre }}</p>
               </div>
-              <div class="bg-gray-50 p-4 rounded-lg">
+              <!-- <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Actors</h3>
                 <p>{{ movie.Actors }}</p>
-              </div>
+              </div> -->
+            </div>
+            <div class="pt-5">
               <router-link
-                :to="`/watch/${movie.imdbID}`"
-                class="mt-4 bg-blue-600 text-white px-6 py-3 rounded w-full text-center hover:bg-blue-700"
+                :to="`/watch/${movie.imdb_id}`"
+                class="bg-blue-600 text-white px-6 py-3 rounded w-full text-center hover:bg-blue-700"
               >
                 Watch Now
               </router-link>
@@ -80,10 +78,10 @@
     <div v-else class="text-center py-8">
       <p class="text-red-600">Movie not found</p>
       <router-link
-        to="/"
+        to="/favorites"
         class="mt-4 inline-block text-blue-600 hover:text-blue-800"
       >
-        Return to Search
+        Back To Favorite
       </router-link>
     </div>
   </div>
@@ -117,38 +115,12 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await axios.get(`/backend/api/movie/${this.id}`);
+        const response = await axios.get(`/backend/api/moviefromdb/${this.id}`);
         this.movie = response.data;
       } catch (error) {
         console.error("Error fetching movie details:", error);
       } finally {
         this.loading = false;
-      }
-    },
-
-    async saveToFavorites() {
-      if (!this.movie || this.isSaving) return;
-
-      this.isSaving = true;
-      try {
-        await axios.post("/backend/api/favorites", {
-          imdb_id: this.movie.imdbID,
-          title: this.movie.Title,
-          year: this.movie.Year,
-          runtime: this.movie.Runtime,
-          genre: this.movie.Genre,
-          director: this.movie.Director,
-          poster: this.movie.Poster,
-          plot: this.movie.Plot,
-          rating: this.movie.imdbRating,
-        });
-        alert("Movie saved to favorites!");
-        this.$router.push("/favorites");
-      } catch (error) {
-        console.error("Error saving to favorites:", error);
-        alert("Failed to save movie to favorites");
-      } finally {
-        this.isSaving = false;
       }
     },
 
