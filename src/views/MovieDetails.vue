@@ -132,7 +132,7 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await axios.get(`/backend/api/movie/${this.id}`);
+        const response = await axios.get(`/api/movie/${this.id}`);
         this.movie = response.data;
       } catch (error) {
         console.error("Error fetching movie details:", error);
@@ -146,7 +146,7 @@ export default {
 
       this.isSaving = true;
       try {
-        await axios.post("/backend/api/favorites", {
+        await axios.post("/api/favorites", {
           imdb_id: this.movie.imdbID || this.movie.imdb_id,
           title: this.movie.Title || this.movie.title,
           year: this.movie.Year || this.movie.year,

@@ -48,6 +48,20 @@
         </button>
       </div>
 
+      <!-- Genre Filter -->
+      <div class="mb-6 flex flex-wrap gap-4 items-center">
+        <label class="font-medium text-gray-700">Filter by Genre:</label>
+        <select
+          v-model="selectedGenre"
+          class="border rounded-md px-3 py-2 bg-white"
+        >
+          <option value="">All Genres</option>
+          <option v-for="genre in uniqueGenres" :key="genre" :value="genre">
+            {{ genre }}
+          </option>
+        </select>
+      </div>
+
       <div
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6"
       >
@@ -147,12 +161,50 @@ export default {
       movieToRemove: null,
       sortBy: "title",
       sortOrder: "asc",
+      selectedGenre: "", // Stores the selected genre
+      uniqueGenres: [], // Stores distinct genres from favorites
     };
   },
 
+  // computed: {
+  //   sortedFavorites() {
+  //     return [...this.favorites].sort((a, b) => {
+  //       let comparison = 0;
+
+  //       switch (this.sortBy) {
+  //         case "title":
+  //           comparison = a.title.localeCompare(b.title);
+  //           break;
+  //         case "rating":
+  //           comparison = b.rating - a.rating;
+  //           break;
+  //         case "year":
+  //           comparison = parseInt(b.year) - parseInt(a.year);
+  //           break;
+  //         case "dateAdded":
+  //           comparison = new Date(b.created_at) - new Date(a.created_at);
+  //           break;
+  //       }
+
+  //       return this.sortOrder === "asc" ? comparison : -comparison;
+  //     });
+  //   },
+  // },
+
   computed: {
+    filteredFavorites() {
+      return this.selectedGenre
+        ? this.favorites.filter((movie) =>
+            movie.genre
+              .split(",")
+              .map((g) => g.trim())
+              .includes(this.selectedGenre)
+          )
+        : this.favorites;
+    },
+
     sortedFavorites() {
-      return [...this.favorites].sort((a, b) => {
+      return [...this.filteredFavorites].sort((a, b) => {
         let comparison = 0;
 
         switch (this.sortBy) {
@@ -183,9 +235,19 @@ export default {
     async loadFavorites() {
       this.loading = true;
       try {
-        const response = await axios.get("/backend/api/favorites");
+        const response = await axios.get("/api/favorites");
         console.log("Favorites data:", response.data); // Debugging
         this.favorites = response.data;
+        // Extract all genres
+        let genreSet = new Set();
+        this.favorites.forEach((movie) => {
+          if (movie.genre) {
+            movie.genre.split(",").forEach((g) => genreSet.add(g.trim()));
+          }
+        });
+
+        // Store unique genres
+        this.uniqueGenres = [...genreSet].sort();
       } catch (error) {
         console.error("Error loading favorites:", error);
       } finally {
@@ -201,9 +263,7 @@ export default {
       if (!this.movieToRemove) return;
 
       try {
-        await axios.delete(
-          `/backend/api/favorites/${this.movieToRemove.imdb_id}`
-        );
+        await axios.delete(`/api/favorites/${this.movieToRemove.imdb_id}`);
         this.favorites = this.favorites.filter(
           (m) => m.imdb_id !== this.movieToRemove.imdb_id
         );

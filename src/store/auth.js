@@ -10,13 +10,10 @@ export const useAuth = () => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post("/api/auth/login", {
+        email,
+        password,
+      });
       token.value = response.data.token;
       userId.value = response.data.userId;
       localStorage.setItem("token", token.value);
@@ -34,14 +31,11 @@ export const useAuth = () => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/register",
-        {
-          name,
-          email,
-          password,
-        }
-      );
+      const response = await axios.post("/api/auth/register", {
+        name,
+        email,
+        password,
+      });
       token.value = response.data.token;
       userId.value = response.data.userId;
       localStorage.setItem("token", token.value);

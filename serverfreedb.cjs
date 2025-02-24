@@ -14,20 +14,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// // Serve static files from the 'dist' directory
-// app.use(express.static(path.join(__dirname, "dist")));
-
-// // Handle SPA routing (for Vue Router history mode)
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "dist", "index.html"));
-// });
+// Serve the frontend (dist folder)
+app.use(express.static(path.join(__dirname, "dist")));
 
 // Database connection
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "root",
-  database: "movies_db",
+  host: "sql.freedb.tech",
+  user: "freedb_vishnu",
+  password: "$rNC&q4H5d9hp%#",
+  database: "freedb_movies_db",
 });
 
 // Database initialization
@@ -412,7 +407,6 @@ app.get("/latest-releases", (req, res) => {
 });
 
 // // Save movie to database
-
 // Update your existing favorites endpoints to use authentication
 app.post("/api/favorites", authenticateToken, (req, res) => {
   const userId = req.user.userId;
@@ -723,8 +717,12 @@ app.get("/api/search-by-director", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch director movies" });
   }
 });
+// Move this to the bottom of your file, after all API routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
-const PORT = 3000 || process.env.PORT;
+const PORT = 3001 || process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

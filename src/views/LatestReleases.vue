@@ -189,7 +189,7 @@ export default {
   methods: {
     async fetchLatestReleases() {
       try {
-        const response = await axios.get("/backend/latest-releases");
+        const response = await axios.get("/latest-releases");
         this.latestReleases = response.data;
       } catch (error) {
         console.error("Error fetching latest releases:", error);
@@ -198,7 +198,7 @@ export default {
 
     async fetchFavorites() {
       try {
-        const response = await axios.get("/backend/api/favorites");
+        const response = await axios.get("/api/favorites");
         this.favorites = response.data;
       } catch (error) {
         console.error("Error fetching favorites:", error);
@@ -234,11 +234,14 @@ export default {
     async toggleFavorite(movie) {
       try {
         if (this.isFavorite(movie.imdb_id)) {
-          await axios.delete(`/backend/api/favorites/${movie.imdb_id}`);
+          await axios.delete(`/api/favorites/${movie.imdb_id}`);
         } else {
-          await axios.post("/backend/api/favorites", {
+          await axios.post("/api/favorites", {
             imdb_id: movie.imdb_id,
             title: movie.title,
+            runtime: movie.runtime,
+            director: movie.director,
+            genre: movie.genre,
             year: new Date(movie.release_date).getFullYear(),
             poster: movie.poster,
             plot: movie.plot,

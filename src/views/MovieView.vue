@@ -116,7 +116,7 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await axios.get(`/backend/api/moviefromdb/${this.id}`);
+        const response = await axios.get(`/api/moviefromdb/${this.id}`);
         this.movie = response.data;
         console.log(response.data);
       } catch (error) {
@@ -130,7 +130,7 @@ export default {
 
       this.isSaving = true;
       try {
-        await axios.post("/backend/api/favorites", {
+        await axios.post("/api/favorites", {
           imdb_id: this.movie.imdb_id,
           title: this.movie.title,
           year: this.movie.year,
