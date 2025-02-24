@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: "0.0.0.0",
     proxy: {
       "/backend": {
         target: "http://localhost:3000", // your backend server

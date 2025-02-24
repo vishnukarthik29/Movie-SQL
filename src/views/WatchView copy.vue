@@ -4,45 +4,33 @@
       <p class="text-gray-600">Loading movie details...</p>
     </div>
 
-    <div v-else-if="movie" class="flex flex-col md:flex-row gap-8 w-full">
+    <div v-else-if="movie" class="flex flex-col md:flex-row gap-8">
       <!-- Movie Details -->
-      <div
-        class="md:w-2/5 bg-white rounded-lg shadow-lg p-6 flex flex-col items-center"
-      >
+      <div class="md:w-2/5 bg-white rounded-lg shadow-lg p-6">
         <img
-          :src="movie.Poster || movie.poster"
-          :alt="movie.Title || movie.title"
-          class="w-full max-w-xs md:max-w-sm object-cover rounded-lg shadow-md"
+          :src="movie.poster"
+          :alt="movie.title"
+          class="w-full object-cover rounded-lg shadow-md"
         />
-        <h1 class="text-3xl font-bold mt-4 text-center">
-          {{ movie.Title ?? movie.title }}
-        </h1>
-        <p class="text-gray-600 mt-2 text-center">
-          {{ movie.Plot ?? movie.plot }}
-        </p>
-        <div class="mt-4 space-y-2 text-center">
-          <p><strong>Year:</strong> {{ movie.Year ?? movie.year }}</p>
-          <p>
-            <strong>Director:</strong>{{ movie.Director ?? movie.director }}
-          </p>
-          <p><strong>Genre:</strong> {{ movie.Genre ?? movie.genre }}</p>
-          <p>
-            <strong>Rating:</strong> {{ movie.imdbRating ?? movie.rating }}/10
-          </p>
+        <h1 class="text-3xl font-bold mt-4">{{ movie.title }}</h1>
+        <p class="text-gray-600 mt-2">{{ movie.plot }}</p>
+        <div class="mt-4 space-y-2">
+          <p><strong>Year:</strong> {{ movie.year }}</p>
+          <p><strong>Director:</strong> {{ movie.director }}</p>
+          <p><strong>Genre:</strong> {{ movie.genre }}</p>
+          <p><strong>Rating:</strong> {{ movie.rating }}/10</p>
         </div>
       </div>
 
       <!-- Video Embed -->
       <div class="md:w-3/5">
         <h2 class="text-2xl font-semibold mb-4">Watch Now</h2>
-        <div class="w-full aspect-video rounded-lg shadow-lg">
-          <iframe
-            v-if="videoUrl"
-            :src="videoUrl"
-            class="w-full h-full rounded-lg"
-            allowfullscreen
-          ></iframe>
-        </div>
+        <iframe
+          v-if="videoUrl"
+          :src="videoUrl"
+          class="w-[1280px] h-[720px] md:h-[720px] rounded-lg shadow-lg"
+          allowfullscreen
+        ></iframe>
       </div>
     </div>
 
@@ -81,11 +69,11 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await fetch(`/backend/api/movie/${this.id}`);
+        const response = await fetch(`/backend/api/moviefromdb/${this.id}`);
         if (!response.ok) throw new Error("Failed to fetch movie details");
 
         this.movie = await response.json();
-        this.videoUrl = `https://vidsrc.xyz/embed/movie?imdb=${this.id}`;
+        this.videoUrl = `https://vidsrc.xyz/embed/movie?imdb=${this.movie.imdb_id}`;
       } catch (error) {
         console.error("Error fetching movie details:", error);
         this.movie = null;

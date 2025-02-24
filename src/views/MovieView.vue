@@ -55,12 +55,13 @@
               </div>
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Genre</h3>
-                <p>{{ movie.Genre }}</p>
+                <p v-if="movie.Genre">{{ movie.Genre }}</p>
+                <p v-else>{{ movie.genre }}</p>
               </div>
-              <!-- <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-semibold text-gray-600">Actors</h3>
-                <p>{{ movie.Actors }}</p>
-              </div> -->
+                <p>{{ movie.actors }}</p>
+              </div>
             </div>
             <div class="pt-5">
               <router-link
@@ -117,10 +118,37 @@ export default {
       try {
         const response = await axios.get(`/backend/api/moviefromdb/${this.id}`);
         this.movie = response.data;
+        console.log(response.data);
       } catch (error) {
         console.error("Error fetching movie details:", error);
       } finally {
         this.loading = false;
+      }
+    },
+    async saveToFavorites() {
+      if (!this.movie || this.isSaving) return;
+
+      this.isSaving = true;
+      try {
+        await axios.post("/backend/api/favorites", {
+          imdb_id: this.movie.imdb_id,
+          title: this.movie.title,
+          year: this.movie.year,
+          runtime: this.movie.runtime,
+          genre: this.movie.genre,
+          actors: this.movie.actors,
+          director: this.movie.director,
+          poster: this.movie.poster,
+          plot: this.movie.plot,
+          rating: this.movie.rating,
+        });
+        alert("Movie saved to favorites!");
+        this.$router.push("/favorites");
+      } catch (error) {
+        console.error("Error saving to favorites:", error);
+        alert("Failed to save movie to favorites");
+      } finally {
+        this.isSaving = false;
       }
     },
 

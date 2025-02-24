@@ -1,6 +1,6 @@
 <!-- src/views/FavoritesView.vue -->
 <template>
-  <div class="container p-4">
+  <div class="p-4">
     <h1 class="text-2xl font-bold mb-6">My Favorite Movies</h1>
 
     <!-- Loading State -->
@@ -48,7 +48,9 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6"
+      >
         <div
           v-for="movie in sortedFavorites"
           :key="movie.imdb_id"

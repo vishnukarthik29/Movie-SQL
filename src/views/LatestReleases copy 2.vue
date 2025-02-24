@@ -28,7 +28,7 @@
             </h3>
             <!-- Heart Icon -->
             <button
-              @click="handleFavoriteClick(movie)"
+              @click="toggleFavorite(movie)"
               class="text-red-500 hover:text-red-600 mr-2"
               :class="{ 'text-red-600': isFavorite(movie.imdb_id) }"
             >
@@ -190,12 +190,12 @@ export default {
     async fetchLatestReleases() {
       try {
         const response = await axios.get("/backend/latest-releases");
+        console.log(response.data);
         this.latestReleases = response.data;
       } catch (error) {
         console.error("Error fetching latest releases:", error);
       }
     },
-
     async fetchFavorites() {
       try {
         const response = await axios.get("/backend/api/favorites");
@@ -204,31 +204,16 @@ export default {
         console.error("Error fetching favorites:", error);
       }
     },
-
     isFavorite(imdbId) {
       return this.favorites.some((movie) => movie.imdb_id === imdbId);
     },
-
-    checkAuthAndShowModal(movie) {
-      const token = localStorage.getItem("token");
-      const userId = localStorage.getItem("userId");
-
-      if (!token || !userId) {
-        this.pendingMovie = movie;
-        this.showAuthModal = true;
-        return false;
-      }
-      return true;
-    },
-
-    async handleFavoriteClick(movie) {
+    handleFavoriteClick(movie) {
       if (!this.auth.isAuthenticated()) {
         this.pendingMovie = movie;
         this.showAuthModal = true;
-        this.isLogin = true; // Ensure login form is shown
         return;
       }
-      await this.toggleFavorite(movie);
+      this.toggleFavorite(movie);
     },
 
     async toggleFavorite(movie) {
@@ -250,7 +235,6 @@ export default {
         console.error("Error toggling favorite:", error);
       }
     },
-
     async handleSubmit() {
       let success = false;
 
@@ -269,16 +253,21 @@ export default {
         }
 
         if (success) {
-          location.reload(); // Force page refresh
           this.showAuthModal = false;
           await this.fetchFavorites();
 
+          // If there was a pending movie to favorite, process it
           if (this.pendingMovie) {
             await this.toggleFavorite(this.pendingMovie);
             this.pendingMovie = null;
           }
 
-          this.resetAuthForm();
+          // Reset form
+          this.authForm = {
+            name: "",
+            email: "",
+            password: "",
+          };
         }
       } catch (error) {
         console.error("Authentication error:", error);
@@ -299,14 +288,15 @@ export default {
       this.pendingMovie = null;
       this.resetAuthForm();
     },
-  },
-  watch: {
-    "auth.token"(newToken) {
-      if (newToken) {
-        this.fetchFavorites();
-      } else {
-        this.favorites = [];
-      }
+    watch: {
+      // Watch for authentication status changes
+      "auth.token"(newToken) {
+        if (newToken) {
+          this.fetchFavorites();
+        } else {
+          this.favorites = [];
+        }
+      },
     },
   },
 };
