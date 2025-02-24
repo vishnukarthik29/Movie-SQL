@@ -14,8 +14,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve the frontend (dist folder)
-app.use(express.static(path.join(__dirname, "dist")));
+// // Serve the frontend (dist folder)
+// app.use(express.static(path.join(__dirname, "dist")));
 
 // Database connection
 const db = mysql.createConnection({
@@ -717,10 +717,10 @@ app.get("/api/search-by-director", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch director movies" });
   }
 });
-// Move this to the bottom of your file, after all API routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
+// // Move this to the bottom of your file, after all API routes
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "dist", "index.html"));
+// });
 
 const PORT = 3001 || process.env.PORT;
 app.listen(PORT, () => {
