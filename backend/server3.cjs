@@ -630,19 +630,153 @@ app.get("/api/similar-movies", async (req, res) => {
   }
 });
 
-// // Search by Director using wikipedia api and omdb
+// // // Search by Director using wikipedia api and omdb
+// app.get("/api/search-by-director", async (req, res) => {
+//   const { director } = req.query;
+
+//   if (!director) {
+//     console.log("Error: Director name is missing from the request.");
+//     return res.status(400).json({ error: "Director name is required" });
+//   }
+
+//   try {
+//     console.log(`Checking database for cached movies of director: ${director}`);
+
+//     // Check if movies are already stored in the database
+//     const [existing] = await db
+//       .promise()
+//       .query("SELECT * FROM director_movies WHERE director = ?", [director]);
+
+//     if (existing.length > 0) {
+//       console.log(`Returning cached results for ${director}`);
+//       return res.json(existing);
+//     }
+
+//     console.log(
+//       `No cached data found. Fetching filmography from Wikipedia for: ${director}`,
+//     );
+
+//     // Fetch Wikipedia page
+//     const wikiUrl = `https://en.wikipedia.org/wiki/${director.replace(
+//       / /g,
+//       "_",
+//     )}#Filmography`;
+//     const wikiResponse = await axios.get(wikiUrl);
+//     const $ = cheerio.load(wikiResponse.data);
+
+//     // Extract movie titles from Wikipedia's Filmography section
+//     let movieTitles = [];
+
+//     $("table.wikitable tbody tr").each((index, element) => {
+//       const movieTitle = $(element).find("td i a").first().text().trim(); // Extract movie title from <i><a> tag
+
+//       if (movieTitle) {
+//         movieTitles.push(movieTitle);
+//       }
+//     });
+
+//     console.log(
+//       `Extracted ${movieTitles.length} movies from Wikipedia for ${director}`,
+//     );
+
+//     if (movieTitles.length === 0) {
+//       console.log(`No valid filmography found on Wikipedia for: ${director}`);
+//       return res
+//         .status(404)
+//         .json({ error: "No movies found for this director on Wikipedia" });
+//     }
+
+//     let movieData = [];
+
+//     // Fetch movie details from OMDb API
+//     for (const title of movieTitles) {
+//       console.log(`Fetching details for: ${title}`);
+
+//       try {
+//         const omdbResponse = await axios.get(
+//           `https://www.omdbapi.com/?t=${encodeURIComponent(
+//             title,
+//           )}&apikey=bf4ec251`,
+//         );
+//         const movie = omdbResponse.data;
+
+//         if (movie.Response === "True") {
+//           const processedMovie = {
+//             imdb_id: movie.imdbID || "N/A",
+//             title: movie.Title || "Unknown Title",
+//             year: movie.Year || "Unknown",
+//             runtime: movie.Runtime || "Unknown",
+//             genre: movie.Genre || "Unknown",
+//             actors: movie.Actors || "Unknown",
+//             director_name: director,
+//             poster: movie.Poster || null,
+//             plot: movie.Plot || "Plot not available",
+//             rating: movie.imdbRating || "N/A",
+//           };
+
+//           movieData.push(processedMovie);
+
+//           // Store movie in database
+//           await db
+//             .promise()
+//             .query(
+//               "INSERT IGNORE INTO director_movies (director, imdb_id, title, year, runtime, genre, actors, director_name, poster, plot, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+//               [
+//                 director,
+//                 processedMovie.imdb_id,
+//                 processedMovie.title,
+//                 processedMovie.year,
+//                 processedMovie.runtime,
+//                 processedMovie.genre,
+//                 processedMovie.actors,
+//                 processedMovie.director_name,
+//                 processedMovie.poster,
+//                 processedMovie.plot,
+//                 processedMovie.rating,
+//               ],
+//             );
+//         } else {
+//           console.log(`No OMDb data found for: ${title}`);
+//         }
+//       } catch (omdbError) {
+//         console.error(
+//           `Error fetching details from OMDb for ${title}:`,
+//           omdbError,
+//         );
+//       }
+//     }
+
+//     if (movieData.length === 0) {
+//       console.log(`No detailed movie data found for ${director}`);
+//       return res
+//         .status(404)
+//         .json({ error: "No verified movies found for this director" });
+//     }
+
+//     console.log(
+//       `Successfully stored ${movieData.length} movies for ${director}. Returning data.`,
+//     );
+//     res.json(movieData);
+//   } catch (error) {
+//     console.error("Error searching by director:", error);
+//     res.status(500).json({ error: "Failed to fetch director movies" });
+//   }
+// });
+
+// Search by Director using Wikipedia + OMDb
 app.get("/api/search-by-director", async (req, res) => {
   const { director } = req.query;
 
   if (!director) {
-    console.log("Error: Director name is missing from the request.");
-    return res.status(400).json({ error: "Director name is required" });
+    return res.status(400).json({
+      error: "Director name is required",
+    });
   }
 
   try {
     console.log(`Checking database for cached movies of director: ${director}`);
 
-    // Check if movies are already stored in the database
+    // Check cached data
     const [existing] = await db
       .promise()
       .query("SELECT * FROM director_movies WHERE director = ?", [director]);
@@ -656,48 +790,102 @@ app.get("/api/search-by-director", async (req, res) => {
       `No cached data found. Fetching filmography from Wikipedia for: ${director}`,
     );
 
-    // Fetch Wikipedia page
-    const wikiUrl = `https://en.wikipedia.org/wiki/${director.replace(
-      / /g,
-      "_",
-    )}#Filmography`;
-    const wikiResponse = await axios.get(wikiUrl);
-    const $ = cheerio.load(wikiResponse.data);
+    // Create wikipedia URL
+    const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(
+      director.replace(/ /g, "_"),
+    )}`;
 
-    // Extract movie titles from Wikipedia's Filmography section
-    let movieTitles = [];
+    console.log("Wikipedia URL:", wikiUrl);
 
-    $("table.wikitable tbody tr").each((index, element) => {
-      const movieTitle = $(element).find("td i a").first().text().trim(); // Extract movie title from <i><a> tag
-
-      if (movieTitle) {
-        movieTitles.push(movieTitle);
-      }
+    // Fetch wikipedia page with browser-like headers
+    const wikiResponse = await axios.get(wikiUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        Connection: "keep-alive",
+      },
+      timeout: 15000,
     });
 
-    console.log(
-      `Extracted ${movieTitles.length} movies from Wikipedia for ${director}`,
-    );
+    const $ = cheerio.load(wikiResponse.data);
+
+    let movieTitles = [];
+
+    // Try finding Filmography section
+    const filmographyHeading =
+      $("#Filmography").length > 0
+        ? $("#Filmography")
+        : $("#Selected_filmography");
+
+    if (filmographyHeading.length > 0) {
+      console.log("Filmography section found");
+
+      // Get all wikitables after filmography section
+      let current = filmographyHeading.parent().next();
+
+      while (current.length) {
+        // Stop when next heading starts
+        if (current.is("h2") || current.is("h3") || current.is("h4")) {
+          break;
+        }
+
+        if (current.is("table.wikitable")) {
+          current.find("tbody tr").each((_, row) => {
+            const title = $(row).find("td i a").first().text().trim();
+
+            if (title && !movieTitles.includes(title) && title.length > 1) {
+              movieTitles.push(title);
+            }
+          });
+        }
+
+        current = current.next();
+      }
+    }
+
+    // Backup scraping if filmography section fails
+    if (movieTitles.length === 0) {
+      console.log("Filmography section not found. Using fallback scraping...");
+
+      $("table.wikitable tbody tr").each((_, row) => {
+        const title = $(row).find("td i a").first().text().trim();
+
+        if (title && !movieTitles.includes(title) && title.length > 1) {
+          movieTitles.push(title);
+        }
+      });
+    }
+
+    // Remove duplicates
+    movieTitles = [...new Set(movieTitles)];
+
+    console.log("Extracted movie titles:");
+    console.log(movieTitles);
 
     if (movieTitles.length === 0) {
-      console.log(`No valid filmography found on Wikipedia for: ${director}`);
-      return res
-        .status(404)
-        .json({ error: "No movies found for this director on Wikipedia" });
+      return res.status(404).json({
+        error: "No movies found in Wikipedia filmography",
+      });
     }
 
     let movieData = [];
 
-    // Fetch movie details from OMDb API
+    // Fetch movie details from OMDb
     for (const title of movieTitles) {
-      console.log(`Fetching details for: ${title}`);
-
       try {
-        const omdbResponse = await axios.get(
-          `https://www.omdbapi.com/?t=${encodeURIComponent(
-            title,
-          )}&apikey=bf4ec251`,
-        );
+        console.log(`Fetching OMDb data for: ${title}`);
+
+        const omdbResponse = await axios.get(`https://www.omdbapi.com/`, {
+          params: {
+            t: title,
+            apikey: "bf4ec251",
+          },
+          timeout: 10000,
+        });
+
         const movie = omdbResponse.data;
 
         if (movie.Response === "True") {
@@ -709,57 +897,79 @@ app.get("/api/search-by-director", async (req, res) => {
             genre: movie.Genre || "Unknown",
             actors: movie.Actors || "Unknown",
             director_name: director,
-            poster: movie.Poster || null,
+            poster:
+              movie.Poster && movie.Poster !== "N/A" ? movie.Poster : null,
             plot: movie.Plot || "Plot not available",
             rating: movie.imdbRating || "N/A",
           };
 
           movieData.push(processedMovie);
 
-          // Store movie in database
-          await db
-            .promise()
-            .query(
-              "INSERT IGNORE INTO director_movies (director, imdb_id, title, year, runtime, genre, actors, director_name, poster, plot, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [
-                director,
-                processedMovie.imdb_id,
-                processedMovie.title,
-                processedMovie.year,
-                processedMovie.runtime,
-                processedMovie.genre,
-                processedMovie.actors,
-                processedMovie.director_name,
-                processedMovie.poster,
-                processedMovie.plot,
-                processedMovie.rating,
-              ],
-            );
+          // Save to database
+          await db.promise().query(
+            `
+            INSERT IGNORE INTO director_movies
+            (
+              director,
+              imdb_id,
+              title,
+              year,
+              runtime,
+              genre,
+              actors,
+              director_name,
+              poster,
+              plot,
+              rating
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            [
+              director,
+              processedMovie.imdb_id,
+              processedMovie.title,
+              processedMovie.year,
+              processedMovie.runtime,
+              processedMovie.genre,
+              processedMovie.actors,
+              processedMovie.director_name,
+              processedMovie.poster,
+              processedMovie.plot,
+              processedMovie.rating,
+            ],
+          );
         } else {
-          console.log(`No OMDb data found for: ${title}`);
+          console.log(`OMDb not found for: ${title}`);
         }
       } catch (omdbError) {
-        console.error(
-          `Error fetching details from OMDb for ${title}:`,
-          omdbError,
-        );
+        console.error(`OMDb fetch failed for ${title}:`, omdbError.message);
       }
     }
 
     if (movieData.length === 0) {
-      console.log(`No detailed movie data found for ${director}`);
-      return res
-        .status(404)
-        .json({ error: "No verified movies found for this director" });
+      return res.status(404).json({
+        error: "No verified movies found from OMDb",
+      });
     }
 
     console.log(
-      `Successfully stored ${movieData.length} movies for ${director}. Returning data.`,
+      `Successfully fetched ${movieData.length} movies for ${director}`,
     );
-    res.json(movieData);
+
+    return res.json(movieData);
   } catch (error) {
-    console.error("Error searching by director:", error);
-    res.status(500).json({ error: "Failed to fetch director movies" });
+    console.error("Error searching by director:");
+
+    if (error.response) {
+      console.error("Status:", error.response.status);
+      console.error("Data:", error.response.data);
+    } else {
+      console.error(error.message);
+    }
+
+    return res.status(500).json({
+      error: "Failed to fetch director movies",
+    });
   }
 });
 

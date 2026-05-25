@@ -37,12 +37,25 @@
         <div class="md:w-3/5">
           <h2 class="text-2xl font-semibold mb-4">Watch Now</h2>
           <div class="w-full aspect-video rounded-lg shadow-lg">
-            <iframe
+            <!-- <iframe
               v-if="videoUrl"
               :src="videoUrl"
               class="w-full h-full rounded-lg"
               allowfullscreen
-            ></iframe>
+            ></iframe> -->
+            <div
+              class="w-full aspect-video rounded-lg shadow-lg"
+              @contextmenu.prevent
+              @keydown.prevent
+            >
+              <iframe
+                v-if="videoUrl"
+                :src="videoUrl"
+                class="w-full h-full rounded-lg"
+                allowfullscreen
+                referrerpolicy="no-referrer"
+              ></iframe>
+            </div>
           </div>
         </div>
       </div>
@@ -95,18 +108,67 @@ export default {
   methods: {
     async loadMovieDetails() {
       this.loading = true;
+
       try {
         const response = await fetch(`/backend/api/movie/${this.id}`);
-        if (!response.ok) throw new Error("Failed to fetch movie details");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch movie details");
+        }
 
         this.movie = await response.json();
-        this.videoUrl = `https://vidsrc-embed.ru/embed/movie?imdb=${this.id}`;
+
+        if (this.movie?.Type === "series" || this.movie?.Type === "tv") {
+          this.videoUrl = `https://vidsrcme.su/embed/tv?imdb=${this.id}`;
+        } else {
+          this.videoUrl = `https://vidsrcme.su/embed/movie?imdb=${this.id}`;
+        }
       } catch (error) {
         console.error("Error fetching movie details:", error);
         this.movie = null;
       } finally {
         this.loading = false;
       }
+    },
+    // async loadMovieDetails() {
+    //   this.loading = true;
+
+    //   try {
+    //     const response = await fetch(`/backend/api/movie/${this.id}`);
+
+    //     if (!response.ok) {
+    //       throw new Error("Failed to fetch movie details");
+    //     }
+
+    //     this.movie = await response.json();
+
+    //     const domain = import.meta.env.VITE_VIDEO_DOMAIN;
+
+    //     if (this.movie?.Type === "series" || this.movie?.Type === "tv") {
+    //       this.videoUrl = `${domain}/embed/tv?imdb=${this.id}`;
+    //     } else {
+    //       this.videoUrl = `${domain}/embed/movie?imdb=${this.id}`;
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching movie details:", error);
+    //     this.movie = null;
+    //   } finally {
+    //     this.loading = false;
+    //   }
+    // },
+    mounted() {
+      // Block popup windows
+      const originalOpen = window.open;
+
+      window.open = function () {
+        console.log("Popup blocked");
+        return null;
+      };
+
+      // Optional cleanup
+      this.$once("hook:beforeUnmount", () => {
+        window.open = originalOpen;
+      });
     },
   },
 };
