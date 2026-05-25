@@ -134,7 +134,7 @@
   </div>
 </template>
 
-<script>
+<!-- <script>
 import axios from "axios";
 
 export default {
@@ -280,6 +280,235 @@ export default {
       this.actorQuery = "";
 
       // Reset sorting to defaults
+      this.sortBy = "title";
+      this.sortDirection = "asc";
+    },
+  },
+};
+</script> -->
+<script>
+import axios from "axios";
+
+export default {
+  name: "HomeView",
+
+  data() {
+    return {
+      searchQuery: "",
+      directorQuery: "",
+      actorQuery: "",
+      searchResults: [],
+      loading: false,
+      sortBy: "title",
+      sortDirection: "asc",
+      OMDB_API_KEY: "bf4ec251",
+    };
+  },
+
+  computed: {
+    sortedResults() {
+      const uniqueMovies = this.deduplicateMovies(this.searchResults);
+
+      return uniqueMovies.sort((a, b) => {
+        const aTitle = a.Title ?? a.title ?? "";
+        const bTitle = b.Title ?? b.title ?? "";
+
+        const aYear = parseInt(a.Year ?? a.year ?? 0);
+        const bYear = parseInt(b.Year ?? b.year ?? 0);
+
+        if (this.sortBy === "title") {
+          return this.sortDirection === "asc"
+            ? aTitle.localeCompare(bTitle)
+            : bTitle.localeCompare(aTitle);
+        }
+
+        if (this.sortBy === "year") {
+          return this.sortDirection === "asc" ? aYear - bYear : bYear - aYear;
+        }
+
+        return 0;
+      });
+    },
+  },
+
+  methods: {
+    getMovieId(movie) {
+      return movie.imdbID || movie.imdb_id;
+    },
+
+    getMovieTitle(movie) {
+      return movie.Title || movie.title;
+    },
+
+    deduplicateMovies(movies) {
+      const uniqueMovies = {};
+
+      movies.forEach((movie) => {
+        const id = this.getMovieId(movie);
+        const title = this.getMovieTitle(movie);
+
+        const key = `${id}-${title}`;
+
+        if (!uniqueMovies[key]) {
+          uniqueMovies[key] = movie;
+        }
+      });
+
+      return Object.values(uniqueMovies);
+    },
+
+    // SEARCH BY TITLE
+    async searchMovies() {
+      if (!this.searchQuery.trim()) return;
+
+      this.loading = true;
+
+      try {
+        const response = await axios.get(`https://www.omdbapi.com/`, {
+          params: {
+            s: this.searchQuery,
+            apikey: this.OMDB_API_KEY,
+          },
+        });
+
+        this.searchResults = response.data.Search || [];
+      } catch (error) {
+        console.error("Error searching movies:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // SEARCH BY DIRECTOR
+    async searchByDirector() {
+      if (!this.directorQuery.trim()) return;
+
+      this.loading = true;
+
+      try {
+        // Search director name first
+        const searchResponse = await axios.get(`https://www.omdbapi.com/`, {
+          params: {
+            s: this.directorQuery,
+            type: "movie",
+            apikey: this.OMDB_API_KEY,
+          },
+        });
+
+        const movies = searchResponse.data.Search || [];
+
+        let directorMovies = [];
+
+        // Fetch full details for each movie
+        for (const movie of movies) {
+          try {
+            const detailsResponse = await axios.get(
+              `https://www.omdbapi.com/`,
+              {
+                params: {
+                  i: movie.imdbID,
+                  apikey: this.OMDB_API_KEY,
+                },
+              },
+            );
+
+            const details = detailsResponse.data;
+
+            // Match director name
+            if (
+              details.Director &&
+              details.Director.toLowerCase().includes(
+                this.directorQuery.toLowerCase(),
+              )
+            ) {
+              directorMovies.push(details);
+            }
+          } catch (err) {
+            console.error("Error fetching movie details:", err);
+          }
+        }
+
+        this.searchResults = directorMovies;
+      } catch (error) {
+        console.error("Error searching by director:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // SEARCH BY ACTOR
+    async searchByActor() {
+      if (!this.actorQuery.trim()) return;
+
+      this.loading = true;
+
+      try {
+        const searchResponse = await axios.get(`https://www.omdbapi.com/`, {
+          params: {
+            s: this.actorQuery,
+            type: "movie",
+            apikey: this.OMDB_API_KEY,
+          },
+        });
+
+        const movies = searchResponse.data.Search || [];
+
+        let actorMovies = [];
+
+        for (const movie of movies) {
+          try {
+            const detailsResponse = await axios.get(
+              `https://www.omdbapi.com/`,
+              {
+                params: {
+                  i: movie.imdbID,
+                  apikey: this.OMDB_API_KEY,
+                },
+              },
+            );
+
+            const details = detailsResponse.data;
+
+            if (
+              details.Actors &&
+              details.Actors.toLowerCase().includes(
+                this.actorQuery.toLowerCase(),
+              )
+            ) {
+              actorMovies.push(details);
+            }
+          } catch (err) {
+            console.error("Error fetching actor movie details:", err);
+          }
+        }
+
+        this.searchResults = actorMovies;
+      } catch (error) {
+        console.error("Error searching by actor:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    handleImageError(e) {
+      e.target.src =
+        "https://via.placeholder.com/300x450?text=No+Image+Available";
+    },
+
+    sortResults(field) {
+      if (this.sortBy === field) {
+        this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        this.sortBy = field;
+        this.sortDirection = "asc";
+      }
+    },
+
+    clearAll() {
+      this.searchResults = [];
+      this.searchQuery = "";
+      this.directorQuery = "";
+      this.actorQuery = "";
       this.sortBy = "title";
       this.sortDirection = "asc";
     },
