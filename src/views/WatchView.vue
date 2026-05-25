@@ -58,17 +58,23 @@
       </router-link>
     </div>
   </div>
+
+  <!-- Other Movies by Same Director Section -->
+  <MoviesThatThisDirectorDirected v-if="movie" :currentMovie="movie" />
+
   <!-- Movies You Might Like Section -->
   <MoviesYouMightLike v-if="movie" :currentMovie="movie" />
 </template>
 
 <script>
 import MoviesYouMightLike from "./MoviesYouMightLike.vue";
+import MoviesThatThisDirectorDirected from "./MoviesThatThisDirectorDirected.vue";
 
 export default {
   name: "WatchNowView",
   components: {
     MoviesYouMightLike,
+    MoviesThatThisDirectorDirected,
   },
   props: {
     id: {
@@ -90,11 +96,11 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await fetch(`/api/movie/${this.id}`);
+        const response = await fetch(`/backend/api/movie/${this.id}`);
         if (!response.ok) throw new Error("Failed to fetch movie details");
 
         this.movie = await response.json();
-        this.videoUrl = `https://vidsrc.xyz/embed/movie?imdb=${this.id}`;
+        this.videoUrl = `https://vidsrc-embed.ru/embed/movie?imdb=${this.id}`;
       } catch (error) {
         console.error("Error fetching movie details:", error);
         this.movie = null;

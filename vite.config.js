@@ -17,7 +17,7 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/backend": {
-        target: "http://localhost:3001", // your backend server
+        target: "http://localhost:3000", // your backend server
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/backend/, ""), // Optional: remove '/backend' from the path
       },

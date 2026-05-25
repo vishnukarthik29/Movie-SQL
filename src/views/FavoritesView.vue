@@ -198,7 +198,7 @@ export default {
             movie.genre
               .split(",")
               .map((g) => g.trim())
-              .includes(this.selectedGenre)
+              .includes(this.selectedGenre),
           )
         : this.favorites;
     },
@@ -235,7 +235,7 @@ export default {
     async loadFavorites() {
       this.loading = true;
       try {
-        const response = await axios.get("/api/favorites");
+        const response = await axios.get("/backend/api/favorites");
         console.log("Favorites data:", response.data); // Debugging
         this.favorites = response.data;
         // Extract all genres
@@ -265,7 +265,7 @@ export default {
       try {
         await axios.delete(`/api/favorites/${this.movieToRemove.imdb_id}`);
         this.favorites = this.favorites.filter(
-          (m) => m.imdb_id !== this.movieToRemove.imdb_id
+          (m) => m.imdb_id !== this.movieToRemove.imdb_id,
         );
         this.movieToRemove = null;
       } catch (error) {

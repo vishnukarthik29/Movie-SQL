@@ -174,7 +174,7 @@ app.post("/api/auth/register", async (req, res) => {
       .promise()
       .query(
         "INSERT INTO login_details (name, email, password) VALUES (?, ?, ?)",
-        [name, email, hashedPassword]
+        [name, email, hashedPassword],
       );
 
     const token = jwt.sign({ userId: result.insertId }, JWT_SECRET, {
@@ -218,27 +218,66 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+// async function fetchMoviesFromWikipedia(year) {
+//   try {
+//     const url = `https://en.wikipedia.org/wiki/List_of_American_films_of_${year}`;
+//     console.log(`Fetching movie list from Wikipedia: ${url}`);
+
+//     const response = await axios.get("https://en.wikipedia.org/w/api.php", {
+//       params: {
+//         action: "parse",
+//         page: `List_of_American_films_of_${year}`,
+//         format: "json",
+//       },
+//     });
+//     const $ = cheerio.load(response.data);
+//     const movieNames = [];
+
+//     // Wikipedia tables often have film titles in <i><a> tags
+//     $("table.wikitable tbody tr td i a").each((index, element) => {
+//       const movieTitle = $(element).text().trim();
+//       if (movieTitle) {
+//         movieNames.push(movieTitle);
+//       }
+//     });
+
+//     console.log(`Fetched ${movieNames.length} movies from Wikipedia`);
+//     return movieNames;
+//   } catch (error) {
+//     console.error("Error fetching Wikipedia data:", error);
+//     return [];
+//   }
+// }
+
 async function fetchMoviesFromWikipedia(year) {
   try {
-    const url = `https://en.wikipedia.org/wiki/List_of_American_films_of_${year}`;
-    console.log(`Fetching movie list from Wikipedia: ${url}`);
-
-    const response = await axios.get(url);
-    const $ = cheerio.load(response.data);
-    const movieNames = [];
-
-    // Wikipedia tables often have film titles in <i><a> tags
-    $("table.wikitable tbody tr td i a").each((index, element) => {
-      const movieTitle = $(element).text().trim();
-      if (movieTitle) {
-        movieNames.push(movieTitle);
-      }
+    const response = await axios.get("https://en.wikipedia.org/w/api.php", {
+      params: {
+        action: "parse",
+        page: `List_of_American_films_of_${year}`,
+        format: "json",
+        prop: "text",
+      },
+      headers: {
+        "User-Agent": "MovieSqlProject/1.0 (vk.dev.project@gmail.com)",
+      },
+      timeout: 10000,
     });
 
-    console.log(`Fetched ${movieNames.length} movies from Wikipedia`);
+    const html = response.data.parse.text["*"];
+    const $ = cheerio.load(html);
+
+    const movieNames = [];
+
+    $("table.wikitable tbody tr td i a").each((_, element) => {
+      const title = $(element).text().trim();
+      if (title) movieNames.push(title);
+    });
+
+    console.log(`Fetched ${movieNames.length} movies`);
     return movieNames;
   } catch (error) {
-    console.error("Error fetching Wikipedia data:", error);
+    console.error("Wikipedia fetch failed:", error.message);
     return [];
   }
 }
@@ -296,7 +335,7 @@ async function storeMovieInDatabase(movie) {
         movie.Poster,
         movie.Plot,
         movie.imdbRating || null,
-      ]
+      ],
     );
 
     console.log(`Added to DB: ${movie.Title}`);
@@ -321,7 +360,7 @@ async function updateLatestReleases() {
       if (movie) {
         await storeMovieInDatabase(movie);
       }
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Small delay to avoid API limit
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Small delay to avoid API limit
     }
 
     console.log("Latest releases update completed!");
@@ -338,7 +377,7 @@ app.get("/api/search", async (req, res) => {
   const { title } = req.query;
   try {
     const response = await axios.get(
-      `https://www.omdbapi.com/?s=${title}&apikey=bf4ec251`
+      `https://www.omdbapi.com/?s=${title}&apikey=bf4ec251`,
     );
     console.log(response.data);
     res.json(response.data);
@@ -389,7 +428,7 @@ app.get("/api/movie/:id", async (req, res) => {
               .json({ error: "Failed to fetch movie details" });
           }
         }
-      }
+      },
     );
   } catch (error) {
     console.log(error);
@@ -407,7 +446,7 @@ app.get("/latest-releases", (req, res) => {
         return;
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -456,7 +495,7 @@ app.post("/api/favorites", authenticateToken, (req, res) => {
         return;
       }
       res.json({ message: "Movie saved successfully", id: result.insertId });
-    }
+    },
   );
 });
 
@@ -473,7 +512,7 @@ app.get("/api/favorites", authenticateToken, (req, res) => {
         return;
       }
       res.json(results);
-    }
+    },
   );
 });
 
@@ -493,7 +532,7 @@ app.delete("/api/favorites/:imdbId", authenticateToken, (req, res) => {
         return;
       }
       res.json({ message: "Movie removed from favorites successfully" });
-    }
+    },
   );
 });
 
@@ -534,10 +573,10 @@ app.get("/api/moviefromdb/:id", async (req, res) => {
               } else {
                 return res.status(404).json({ error: "Movie not found" });
               }
-            }
+            },
           );
         }
-      }
+      },
     );
   } catch (error) {
     console.log(error);
@@ -614,13 +653,13 @@ app.get("/api/search-by-director", async (req, res) => {
     }
 
     console.log(
-      `No cached data found. Fetching filmography from Wikipedia for: ${director}`
+      `No cached data found. Fetching filmography from Wikipedia for: ${director}`,
     );
 
     // Fetch Wikipedia page
     const wikiUrl = `https://en.wikipedia.org/wiki/${director.replace(
       / /g,
-      "_"
+      "_",
     )}#Filmography`;
     const wikiResponse = await axios.get(wikiUrl);
     const $ = cheerio.load(wikiResponse.data);
@@ -637,7 +676,7 @@ app.get("/api/search-by-director", async (req, res) => {
     });
 
     console.log(
-      `Extracted ${movieTitles.length} movies from Wikipedia for ${director}`
+      `Extracted ${movieTitles.length} movies from Wikipedia for ${director}`,
     );
 
     if (movieTitles.length === 0) {
@@ -656,8 +695,8 @@ app.get("/api/search-by-director", async (req, res) => {
       try {
         const omdbResponse = await axios.get(
           `https://www.omdbapi.com/?t=${encodeURIComponent(
-            title
-          )}&apikey=bf4ec251`
+            title,
+          )}&apikey=bf4ec251`,
         );
         const movie = omdbResponse.data;
 
@@ -694,7 +733,7 @@ app.get("/api/search-by-director", async (req, res) => {
                 processedMovie.poster,
                 processedMovie.plot,
                 processedMovie.rating,
-              ]
+              ],
             );
         } else {
           console.log(`No OMDb data found for: ${title}`);
@@ -702,7 +741,7 @@ app.get("/api/search-by-director", async (req, res) => {
       } catch (omdbError) {
         console.error(
           `Error fetching details from OMDb for ${title}:`,
-          omdbError
+          omdbError,
         );
       }
     }
@@ -715,7 +754,7 @@ app.get("/api/search-by-director", async (req, res) => {
     }
 
     console.log(
-      `Successfully stored ${movieData.length} movies for ${director}. Returning data.`
+      `Successfully stored ${movieData.length} movies for ${director}. Returning data.`,
     );
     res.json(movieData);
   } catch (error) {

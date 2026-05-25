@@ -189,7 +189,7 @@ export default {
   methods: {
     async fetchLatestReleases() {
       try {
-        const response = await axios.get("/latest-releases");
+        const response = await axios.get("/backend/latest-releases");
         this.latestReleases = response.data;
       } catch (error) {
         console.error("Error fetching latest releases:", error);
@@ -198,7 +198,7 @@ export default {
 
     async fetchFavorites() {
       try {
-        const response = await axios.get("/api/favorites");
+        const response = await axios.get("/backend/api/favorites");
         this.favorites = response.data;
       } catch (error) {
         console.error("Error fetching favorites:", error);
@@ -234,9 +234,9 @@ export default {
     async toggleFavorite(movie) {
       try {
         if (this.isFavorite(movie.imdb_id)) {
-          await axios.delete(`/api/favorites/${movie.imdb_id}`);
+          await axios.delete(`/backend/api/favorites/${movie.imdb_id}`);
         } else {
-          await axios.post("/api/favorites", {
+          await axios.post("/backend/api/favorites", {
             imdb_id: movie.imdb_id,
             title: movie.title,
             runtime: movie.runtime,
@@ -261,13 +261,13 @@ export default {
         if (this.isLogin) {
           success = await this.auth.login(
             this.authForm.email,
-            this.authForm.password
+            this.authForm.password,
           );
         } else {
           success = await this.auth.register(
             this.authForm.name,
             this.authForm.email,
-            this.authForm.password
+            this.authForm.password,
           );
         }
 

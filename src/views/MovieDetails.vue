@@ -132,7 +132,7 @@ export default {
     async loadMovieDetails() {
       this.loading = true;
       try {
-        const response = await axios.get(`/api/movie/${this.id}`);
+        const response = await axios.get(`/backend/api/movie/${this.id}`);
         this.movie = response.data;
       } catch (error) {
         console.error("Error fetching movie details:", error);

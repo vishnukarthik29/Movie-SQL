@@ -1,13 +1,13 @@
 <template>
   <div class="mt-12">
-    <h2 class="text-2xl font-semibold mb-6">Movies You Might Like</h2>
+    <h2 class="text-2xl font-semibold mb-6">More Movies by {{ director }}</h2>
     <div v-if="loading" class="text-center py-4">
-      <p class="text-gray-600">Loading recommendations...</p>
+      <p class="text-gray-600">Loading director filmography...</p>
     </div>
-    <div v-else-if="similarMovies.length === 0" class="text-center py-4">
-      <p class="text-gray-600">No similar movies found</p>
+    <div v-else-if="directorMovies.length === 0" class="text-center py-4">
+      <p class="text-gray-600">No other movies found by this director</p>
     </div>
-    <div v-else class="recommendation-slider">
+    <div v-else class="director-movies-slider">
       <swiper
         :slides-per-view="1.5"
         :space-between="20"
@@ -29,7 +29,7 @@
         :navigation="true"
       >
         <swiper-slide
-          v-for="movie in similarMovies"
+          v-for="movie in directorMovies"
           :key="movie.imdb_id"
           class="h-auto"
         >
@@ -46,6 +46,11 @@
               <h3 class="text-lg font-semibold mb-2 line-clamp-2">
                 {{ movie.title }}
               </h3>
+              <p class="text-sm text-gray-600 mb-2">{{ movie.year }}</p>
+              <div class="flex items-center mb-2">
+                <span class="text-yellow-500 mr-1">★</span>
+                <span>{{ movie.rating }}/10</span>
+              </div>
               <div class="mt-auto">
                 <router-link
                   :to="{ name: 'MovieView', params: { id: movie.imdb_id } }"
@@ -70,7 +75,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 export default {
-  name: "MoviesYouMightLike",
+  name: "MoviesThatThisDirectorDirected",
   components: {
     Swiper,
     SwiperSlide,
@@ -83,8 +88,9 @@ export default {
   },
   data() {
     return {
-      similarMovies: [],
+      directorMovies: [],
       loading: true,
+      director: "",
     };
   },
   watch: {
@@ -92,54 +98,57 @@ export default {
       immediate: true,
       handler(newValue) {
         if (newValue) {
-          this.fetchSimilarMovies();
+          this.fetchDirectorMovies();
         }
       },
     },
   },
   methods: {
-    async fetchSimilarMovies() {
+    async fetchDirectorMovies() {
       this.loading = true;
-      this.similarMovies = []; // Initialize to empty array
+      this.directorMovies = []; // Initialize to empty array
 
       try {
-        // Get genre from current movie
-        const genre = this.currentMovie.Genre || this.currentMovie.genre;
+        // Get director from current movie
+        this.director =
+          this.currentMovie.Director || this.currentMovie.director;
 
-        if (!genre) {
-          console.warn("No genre found for current movie");
+        if (!this.director) {
+          console.warn("No director found for current movie");
           this.loading = false;
           return;
         }
 
-        // Fetch movies with similar genre, excluding the current movie
+        // Fetch movies by the same director, excluding the current movie
         const currentImdbId =
           this.currentMovie.imdbID || this.currentMovie.imdb_id;
 
         const response = await fetch(
-          `/backend/api/similar-movies?genre=${encodeURIComponent(
-            genre
-          )}&exclude=${currentImdbId}`
+          `/backend/api/search-by-director?director=${encodeURIComponent(
+            this.director
+          )}`
         );
 
         if (!response.ok) {
           throw new Error(
-            `Failed to fetch similar movies: ${response.status} ${response.statusText}`
+            `Failed to fetch director movies: ${response.status} ${response.statusText}`
           );
         }
 
         const data = await response.json();
 
         if (!Array.isArray(data)) {
-          console.warn("Similar movies response is not an array:", data);
+          console.warn("Director movies response is not an array:", data);
           this.loading = false;
           return;
         }
 
-        this.similarMovies = data;
+        // Filter out the current movie
+        this.directorMovies = data.filter(
+          (movie) => movie.imdb_id !== currentImdbId
+        );
       } catch (error) {
-        console.error("Error fetching similar movies:", error);
-        // Don't set this.similarMovies here - keep the initialized empty array
+        console.error("Error fetching director movies:", error);
       } finally {
         this.loading = false;
       }

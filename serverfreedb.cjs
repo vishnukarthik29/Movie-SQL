@@ -19,7 +19,7 @@ app.use(express.json());
 
 // Database connection
 const db = mysql.createConnection({
-  host: "sql.freedb.tech",
+  host: "130.162.54.212",
   user: "freedb_vishnu",
   password: "$rNC&q4H5d9hp%#",
   database: "freedb_movies_db",

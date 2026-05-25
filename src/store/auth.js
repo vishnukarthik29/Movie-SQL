@@ -10,7 +10,7 @@ export const useAuth = () => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("/api/auth/login", {
+      const response = await axios.post("/backend/api/auth/login", {
         email,
         password,
       });
